@@ -15,13 +15,15 @@ def delete_file(path: str):
     os.remove(path)
 
 
-def check_name(template_name: str) -> str:
-    if not template_name:
-        return 'template_name cannot be empty'
-    elif not re.match(r'^[a-zA-Z0-9|\-_]+$', template_name):
-        return 'invalid filename, valid regex ^[a-zA-Z0-9|-_]+$'
+def validate_template_name(template_name: str) -> dict:
+    if not re.match(r'^[a-zA-Z0-9|\-_]+$', template_name):
+        return {'error': True,
+                'status': 'invalid filename, Only English letters, numbers and underscores are allowed',
+                'template_name': template_name}
     else:
-        return ''
+        return {'error': False,
+                'status': 'filename is good :)',
+                'template_name': template_name}
 
 
 @app.get('/', response_class=HTMLResponse)
@@ -31,11 +33,9 @@ async def read_root():
 
 @app.get('/template/delete/{template_name}')
 async def delete_template(template_name: str):
-    check = check_name(template_name)
-    if check:
-        return {'error': True,
-                'status': check,
-                'template_name': template_name}
+    validate = validate_template_name(template_name)
+    if validate['error']:
+        return validate
     if not os.path.exists(f'templates/{template_name}.jinja2'):
         return {'error': True,
                 'status': f'"{template_name}.jinja2" does not exist',
@@ -57,11 +57,9 @@ async def list_templates():
 
 @app.get('/template/get/{template_name}')
 async def get_template(template_name: str):
-    check = check_name(template_name)
-    if check:
-        return {'error': True,
-                'status': check,
-                'template_name': template_name}
+    validate = validate_template_name(template_name)
+    if validate['error']:
+        return validate
     if not os.path.exists(f'templates/{template_name}.jinja2'):
         return {'error': True,
                 'status': f'"{template_name}.jinja2" does not exist',
@@ -73,10 +71,10 @@ async def get_template(template_name: str):
 async def upload_template(template_name: str, data: Request):
     data = await data.body()
     data = data.decode('UTF-8')
-    check = check_name(template_name)
-    if check:
+    validate = validate_template_name(template_name)
+    if validate[1]:
         return {'error': True,
-                'status': check,
+                'status': validate[0],
                 'template_name': template_name}
     if not os.path.exists(f'templates/{template_name}.jinja2'):
         with open(f'templates/{template_name}.jinja2', 'w') as file:
@@ -92,11 +90,9 @@ async def upload_template(template_name: str, data: Request):
 
 @app.post('/template/render/{template_name}')
 async def render_template(template_name: str, data: Request):
-    check = check_name(template_name)
-    if check:
-        return {'error': True,
-                'status': check,
-                'template_name': template_name}
+    validate = validate_template_name(template_name)
+    if validate['error']:
+        return validate
     if not os.path.exists(f'templates/{template_name}.jinja2'):
         return {'error': True,
                 'status': f'"{template_name}.jinja2" does not exist',
