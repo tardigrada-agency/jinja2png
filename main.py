@@ -100,7 +100,7 @@ async def render_template(template_name: str, data: Request):
     image_uuid = uuid.uuid4()
     data = await data.json()
     shot = WebShot()
-    shot.quality = 100
+    shot.quality = 85
 
     root = os.path.dirname(os.path.abspath(__file__))
     templates_dir = os.path.join(root, 'templates')
