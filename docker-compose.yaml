@@ -1,0 +1,11 @@
+version: '3'
+services:
+  jinja2png:
+    container_name: jinja2png
+    build:
+      .
+    ports:
+    - 80:80
+    volumes:
+      - ./templates:/app/templates
+    restart: always
