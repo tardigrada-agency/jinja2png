@@ -1,5 +1,7 @@
 from jinja2 import Environment, FileSystemLoader
 from starlette.background import BackgroundTask
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 from fastapi import FastAPI, Request
@@ -9,6 +11,9 @@ import os
 import re
 
 app = FastAPI()
+templates = Jinja2Templates(directory="static")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 def delete_file(path: str):
@@ -27,8 +32,9 @@ def validate_template_name(template_name: str) -> dict:
 
 
 @app.get('/', response_class=HTMLResponse)
-async def read_root():
-    return '<h1>Jinja2png by Yan Khachko (<a href="https://slnk.icu/">slnk.icu</a>)</h1>'
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
 
 
 @app.get('/template/delete/{template_name}')
