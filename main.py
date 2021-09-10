@@ -36,7 +36,6 @@ async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-
 @app.get('/template/delete/{template_name}')
 async def delete_template(template_name: str):
     validate = validate_template_name(template_name)
@@ -78,10 +77,8 @@ async def upload_template(template_name: str, data: Request):
     data = await data.body()
     data = data.decode('UTF-8')
     validate = validate_template_name(template_name)
-    if validate[1]:
-        return {'error': True,
-                'status': validate[0],
-                'template_name': template_name}
+    if validate['error']:
+        return validate
     if not os.path.exists(f'templates/{template_name}.jinja2'):
         with open(f'templates/{template_name}.jinja2', 'w') as file:
             file.write(data)
