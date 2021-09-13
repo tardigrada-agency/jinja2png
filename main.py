@@ -5,8 +5,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 from fastapi import FastAPI, Request
-from htmlwebshot import WebShot
+import imgkit
 import uuid
+import time
 import os
 import re
 
@@ -17,7 +18,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 def delete_file(path: str):
-    os.remove(path)
+    if not os.path.exists(path):
+        os.remove(path)
 
 
 def validate_template_name(template_name: str) -> dict:
@@ -94,6 +96,8 @@ async def upload_template(template_name: str, data: Request):
 @app.post('/template/render/{template_name}')
 async def render_template(template_name: str, data: Request):
     validate = validate_template_name(template_name)
+    f = open('templates/time.txt', 'w')
+    f.write(f'starting {time.strftime("%Y-%m-%d %H:%M:%S")}\n')
     if validate['error']:
         return validate
     if not os.path.exists(f'templates/{template_name}.jinja2'):
@@ -102,17 +106,25 @@ async def render_template(template_name: str, data: Request):
                 'template_name': template_name}
     image_uuid = uuid.uuid4()
     data = await data.json()
-    shot = WebShot()
-    shot.quality = 85
+    # shot = WebShot()
+    # shot.quality = 80
 
     root = os.path.dirname(os.path.abspath(__file__))
     templates_dir = os.path.join(root, 'templates')
     env = Environment(loader=FileSystemLoader(templates_dir))
     template = env.get_template(f'{template_name}.jinja2')
+    f.write(f'env.get_template {time.strftime("%Y-%m-%d %H:%M:%S")}\n')
 
-    image = shot.create_pic(html=template.render(
+    # image = shot.create_pic(html=template.render(
+    #     images=data['images'],
+    #     texts=data['texts']
+    # ), output=f'images/{image_uuid}.png')
+    imgkit.from_string(template.render(
         images=data['images'],
         texts=data['texts']
-    ), output=f'images/{image_uuid}.png')
+    ), f'images/{image_uuid}.png')
+    f.write(f'shot.create_pic ended {time.strftime("%Y-%m-%d %H:%M:%S")}\n')
 
-    return FileResponse(image, background=BackgroundTask(delete_file, image))
+    f.write(f'ended {time.strftime("%Y-%m-%d %H:%M:%S")}')
+    f.close()
+    return FileResponse(f'images/{image_uuid}.png', background=BackgroundTask(delete_file, f'images/{image_uuid}.png'))
